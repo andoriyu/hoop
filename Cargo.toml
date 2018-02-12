@@ -6,9 +6,9 @@ license = "BSD-2-Clause"
 description = "Fixed ring buffer that allows non-consuming iteration both ways"
 repository = "https://github.com/andoruyu/hoop"
 homepage = "https://github.com/gnzlbg/slice_deque"
-keywords = ["buffer", "collection", "circular-buffer", "ring-buffer", "fifo", "lifo"]
+keywords = ["buffer", "collection", "circular-buffer", "ring-buffer"]
 categories = ["data-structures"]
-readme = "readme.md"
+readme = "README.md"
 
 [badges]
 travis-ci = { repository = "andoriyu/hoop" }
