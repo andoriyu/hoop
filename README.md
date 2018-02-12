@@ -7,7 +7,7 @@
  this one has double ended non-consuming iterator support.
 
 ## Why?
-![](http://i0.kym-cdn.com/entries/icons/facebook/000/022/978/yNlQWRM.jpg =544x633)
+![](http://i0.kym-cdn.com/entries/icons/facebook/000/022/978/yNlQWRM.jpg)
 Imagine you have some metrics data coming in and you need to aggregate over it and at msot you have to go 21 items deep. With Vec and VecDeque you will keep moving and/or allocationg things. This buffer allows you to simple keep writting to it and from time to time grab "Last N items" without removing it from buffer.
 
 ## Installation
