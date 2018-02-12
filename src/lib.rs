@@ -1,3 +1,5 @@
+use std::iter::{DoubleEndedIterator, Iterator};
+
 /// Yet another ring buffer implmentation. This one has ability to iterate both ways without
 /// mutation buffer.
 ///
@@ -71,11 +73,86 @@ impl<T: Clone> Hoop<T> {
 		}
     }
 
+    /// Create non-consuming iterator.
+    pub fn iter(&self) -> Iter<T> {
+        Iter::new(self)
+    }
+
     fn advance(&self, current: usize) -> usize {
        if (current + 1) == self.capacity() {
             0
         } else {
             current + 1
+        }
+    }
+
+    fn retreat(&self, current: usize) -> usize {
+        if current == 0 {
+            self.capacity() - 1
+        } else {
+            current - 1
+        }
+    }
+}
+
+pub struct Iter<'data, T: 'data + Clone> {
+    hoop: &'data Hoop<T>,
+    forward_position: usize,
+    seeking_forward: bool,
+    backward_position: usize,
+    seeking_backward: bool,
+}
+
+impl<'data, T: 'data + Clone> Iterator for Iter<'data, T> {
+    type Item = &'data T;
+    fn next(&mut self) -> Option<&'data T> {
+        // We looped back to the start.
+        if self.seeking_forward && self.forward_position == self.hoop.read_position {
+            return None;
+        }
+        // We reached backward_position. We allowed to look what's underneather it.
+        if self.seeking_forward && self.forward_position > self.backward_position {
+            return None;
+        }
+        if let Some(ref item) = self.hoop.inner[self.forward_position] {
+            self.forward_position = self.hoop.advance(self.forward_position);
+            self.seeking_forward = true;
+            Some(item)
+        } else {
+            None
+        }
+    }
+}
+
+impl <'data, T: 'data + Clone> DoubleEndedIterator for Iter<'data, T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        // We looped back to the start.
+        if self.seeking_backward && self.backward_position == self.hoop.write_position {
+            return None;
+        }
+        let ahead_of_reader = self.backward_position > self.hoop.read_position;
+        if self.seeking_backward && ahead_of_reader && self.backward_position < self.forward_position {
+            return None;
+        }
+
+        if let Some(ref item) = self.hoop.inner[self.backward_position] {
+            self.backward_position = self.hoop.retreat(self.backward_position);
+            self.seeking_backward = true;
+            Some(item)
+        } else {
+            None
+        }
+    }
+}
+
+impl<'data, T: 'data + Clone> Iter<'data, T> {
+    fn new(hoop: &'data Hoop<T>) -> Self {
+        Iter {
+            hoop: hoop,
+            forward_position: hoop.read_position,
+            backward_position: hoop.retreat(hoop.write_position),
+            seeking_forward: false,
+            seeking_backward: false,
         }
     }
 }
@@ -170,5 +247,74 @@ mod tests {
         buffer.overwrite('A');
         assert_eq!(Some('2'), buffer.pop());
         assert_eq!(Some('A'), buffer.pop());
+    }
+
+    #[test]
+    fn iterator_sequence() {
+        let mut buffer = Hoop::with_capacity(2);
+        buffer.write('1');
+        buffer.write('2');
+
+        let expected = vec!['1', '2'];
+
+        let result: Vec<char> = buffer.iter().cloned().collect();
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    fn iterator_warped() {
+        let mut buffer = Hoop::with_capacity(2);
+        buffer.write('1');
+        buffer.write('2');
+        buffer.overwrite('A');
+
+        let expected = vec!['2', 'A'];
+
+        let result: Vec<char> = buffer.iter().cloned().collect();
+        assert_eq!(expected, result);
+    }
+
+    // Should Fail to compile
+    /*
+    #[test]
+    fn iterator_read_and_iter() {
+        let mut buffer = Hoop::with_capacity(2);
+        buffer.write('1');
+        buffer.write('2');
+
+        let mut one = buffer.iter().take(1);
+
+        let left = one.next().map(|e| e.clone());
+        let right = buffer.pop();
+        assert_eq!(left, right);
+    }*/
+
+    #[test]
+    fn iterator_should_not_consume() {
+        let mut buffer = Hoop::with_capacity(2);
+        buffer.write('1');
+        buffer.write('2');
+
+
+        let left: Vec<&char> = buffer.iter().collect();
+        let right: Vec<&char> = buffer.iter().collect();
+        assert_eq!(left, right);
+    }
+
+    #[test]
+    fn that_scene_from_requiem_for_dream() {
+        let mut buffer = Hoop::with_capacity(4);
+        buffer.write('1');
+        buffer.write('2');
+        buffer.write('3');
+        buffer.write('4');
+
+        let mut iter = buffer.iter();
+        assert_eq!(Some(&'1'), iter.next());
+        assert_eq!(Some(&'4'), iter.next_back());
+        assert_eq!(Some(&'2'), iter.next());
+        assert_eq!(Some(&'3'), iter.next_back());
+        assert_eq!(None, iter.next());
+        assert_eq!(None, iter.next_back());
     }
 }
