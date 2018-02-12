@@ -3,6 +3,24 @@ use std::iter::{DoubleEndedIterator, Iterator};
 /// Yet another ring buffer implmentation. This one has ability to iterate both ways without
 /// mutation buffer.
 ///
+/// # Usage
+///
+/// ```
+/// use hoop::Hoop;
+///
+/// let mut buffer = Hoop::with_capacity(4);
+/// buffer.write('1');
+/// buffer.write('2');
+/// buffer.write('3');
+/// buffer.write('4');
+/// let mut iter = buffer.iter();
+/// assert_eq!(Some(&'1'), iter.next());
+/// assert_eq!(Some(&'4'), iter.next_back());
+/// assert_eq!(Some(&'2'), iter.next());
+/// assert_eq!(Some(&'3'), iter.next_back());
+/// assert_eq!(None, iter.next());
+/// assert_eq!(None, iter.next_back());
+/// ```
 pub struct Hoop<T: Clone> {
     inner: Vec<Option<T>>,
     // Next read
