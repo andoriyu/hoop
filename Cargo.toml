@@ -1,10 +1,10 @@
 [package]
 name = "hoop"
-version = "0.2.7"
+version = "0.2.8"
 authors = ["Andrey Cherkashin <with.out@me.com>"]
 license = "BSD-2-Clause"
 description = "Fixed ring buffer that allows non-consuming iteration both ways"
-repository = "https://github.com/andoruyu/hoop"
+repository = "https://github.com/andoriyu/hoop"
 homepage = "https://github.com/gnzlbg/slice_deque"
 keywords = ["buffer", "collection", "circular-buffer", "ring-buffer"]
 categories = ["data-structures"]
