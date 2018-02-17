@@ -86,7 +86,7 @@ impl<T: Clone> Hoop<T> {
     pub fn clear(&mut self) {
         self.read_position = 0;
         self.write_position = 0;
-		for el in self.inner.iter_mut() {
+		for el in &mut self.inner {
 			*el = None;
 		}
     }
